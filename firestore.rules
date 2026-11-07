@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid));
+    }
+    function isApproved() {
+      return signedIn()
+        && exists(/databases/$(db)/documents/users/$(request.auth.uid))
+        && get(/databases/$(db)/documents/users/$(request.auth.uid)).data.approved == true;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      // Nye brukere kan bare opprette seg selv, alltid som ikke-godkjent.
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.approved == false
+        && request.resource.data.keys().hasOnly(['email', 'approved', 'createdAt']);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Innhold: kun godkjente brukere leser, kun admin skriver (admin-skript omgår reglene).
+    match /images/{id}      { allow read: if isApproved(); allow write: if isAdmin(); }
+    match /imagesFull/{id}  { allow read: if isApproved(); allow write: if isAdmin(); }
+    match /timeline/{id}    { allow read: if isApproved(); allow write: if isAdmin(); }
+  }
+}
