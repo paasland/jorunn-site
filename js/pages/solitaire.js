@@ -4,6 +4,7 @@ const SUITS = ["♠", "♥", "♦", "♣"];
 const RANKS = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const isRed = (s) => s === 1 || s === 2;
 const GAP = 6;
+const FACE = 0.38; // hvor mye av hvert åpent kort som vises (plass til stor verdi/farge)
 
 export async function render(el) {
   el.innerHTML = "<h1>Kabal</h1>";
@@ -54,11 +55,16 @@ export async function render(el) {
     : s.type === "found" ? [found[s.f][found[s.f].length - 1]]
     : tab[s.col].slice(s.idx);
 
-  function tryMove(target) {
+  // free = dra-og-slipp: kort kan legges på hvilken som helst kolonne (også mot vanlige regler),
+  // så lenge kolonnen er tom eller øverste kort vender opp. Grunnbunkene følger fortsatt reglene.
+  const canDrop = (pile) => !pile.length || pile[pile.length - 1].up;
+
+  function tryMove(target, free = false) {
     const cards = cardsOf(sel);
     if (!cards[0]) return false;
     if (target.type === "found") { if (cards.length !== 1 || !canFound(cards[0], target.f)) return false; }
-    else if ((sel.type === "tab" && sel.col === target.col) || !canTab(cards[0], tab[target.col])) return false;
+    else if (sel.type === "tab" && sel.col === target.col) return false;
+    else if (!(free ? canDrop(tab[target.col]) : canTab(cards[0], tab[target.col]))) return false;
     snapshot();
     if (sel.type === "waste") waste.pop();
     else if (sel.type === "found") found[sel.f].pop();
@@ -102,15 +108,65 @@ export async function render(el) {
     draw();
   }
 
-  function slot(parent, onTap, label) {
+  let justDragged = false; // hindrer at slippet etter et dra også teller som et trykk
+
+  function slot(parent, onTap, label, target) {
     const s = Object.assign(document.createElement("div"), { className: "slot" });
     if (label) s.textContent = label;
-    s.onclick = onTap;
+    s.onclick = () => { if (!justDragged) onTap(); };
+    s._target = target;
     parent.append(s);
     return s;
   }
 
-  function cardEl(c, top, selected, onTap) {
+  // Dra et (eller flere) kort med pekeren og slipp over en kolonne eller grunnbunke.
+  function startDrag(e, d, source) {
+    if (e.button > 0) return;
+    const sx = e.clientX, sy = e.clientY;
+    const els = source.type === "tab" ? [...d.parentNode.children].slice(source.idx) : [d];
+    let ghost = null, gx = 0, gy = 0;
+    d.setPointerCapture(e.pointerId);
+
+    const move = (ev) => {
+      if (!ghost) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+        const r = d.getBoundingClientRect();
+        gx = sx - r.left; gy = sy - r.top;
+        ghost = Object.assign(document.createElement("div"), { className: "drag-ghost" });
+        ghost.style.width = r.width + "px";
+        const base = parseFloat(els[0].style.top) || 0;
+        for (const el of els) {
+          const c = el.cloneNode(true);
+          c.style.top = (parseFloat(el.style.top) || 0) - base + "px";
+          c.classList.remove("sel");
+          ghost.append(c);
+          el.classList.add("dragging");
+        }
+        boardEl.append(ghost);
+      }
+      ghost.style.left = ev.clientX - gx + "px";
+      ghost.style.top = ev.clientY - gy + "px";
+    };
+    const end = (ev) => {
+      d.removeEventListener("pointermove", move);
+      d.removeEventListener("pointerup", end);
+      d.removeEventListener("pointercancel", end);
+      if (!ghost) return; // ikke flyttet nok: vanlig trykk
+      ghost.remove();
+      justDragged = true;
+      setTimeout(() => { justDragged = false; }, 80);
+      const t = ev.type === "pointerup"
+        ? document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".slot")?._target : null;
+      sel = source;
+      if (!(t && (t.type === "tab" || t.type === "found") && tryMove(t, true))) sel = null;
+      draw();
+    };
+    d.addEventListener("pointermove", move);
+    d.addEventListener("pointerup", end);
+    d.addEventListener("pointercancel", end);
+  }
+
+  function cardEl(c, top, selected, onTap, source) {
     const d = Object.assign(document.createElement("div"), { className: "scard" + (c.up ? "" : " down") + (selected ? " sel" : "") });
     d.style.top = top + "px";
     if (c.up) {
@@ -118,7 +174,8 @@ export async function render(el) {
       d.classList.toggle("red", isRed(c.suit));
       d.append(Object.assign(document.createElement("span"), { textContent: RANKS[c.rank] + SUITS[c.suit] }));
     }
-    d.onclick = (e) => { e.stopPropagation(); onTap(); };
+    d.onclick = (e) => { e.stopPropagation(); if (!justDragged) onTap(); };
+    if (c.up && source) d.onpointerdown = (e) => startDrag(e, d, source);
     return d;
   }
 
@@ -131,30 +188,30 @@ export async function render(el) {
     const bottom = Object.assign(document.createElement("div"), { className: "sol-row" });
     boardEl.append(top, bottom);
 
-    const st = slot(top, () => tap({ type: "stock" }), stock.length ? "" : "↻");
+    const st = slot(top, () => tap({ type: "stock" }), stock.length ? "" : "↻", { type: "stock" });
     if (stock.length) st.append(cardEl({ up: false }, 0, false, () => tap({ type: "stock" })));
     const w = slot(top, () => {});
-    if (waste.length) w.append(cardEl(waste[waste.length - 1], 0, sel?.type === "waste", () => tap({ type: "waste" }, waste[waste.length - 1])));
+    if (waste.length) w.append(cardEl(waste[waste.length - 1], 0, sel?.type === "waste", () => tap({ type: "waste" }, waste[waste.length - 1]), { type: "waste" }));
     slot(top, () => {}).style.visibility = "hidden";
     for (let f = 0; f < 4; f++) {
-      const s = slot(top, () => tap({ type: "found", f }), SUITS[f]);
+      const s = slot(top, () => tap({ type: "found", f }), SUITS[f], { type: "found", f });
       const pile = found[f];
       if (pile.length) {
         s.textContent = "";
-        s.append(cardEl(pile[pile.length - 1], 0, sel?.type === "found" && sel.f === f, () => tap({ type: "found", f }, pile[pile.length - 1])));
+        s.append(cardEl(pile[pile.length - 1], 0, sel?.type === "found" && sel.f === f, () => tap({ type: "found", f }, pile[pile.length - 1]), { type: "found", f }));
       }
     }
 
     let maxH = h;
     tab.forEach((pile, col) => {
-      const s = slot(bottom, () => tap({ type: "tab", col }));
+      const s = slot(bottom, () => tap({ type: "tab", col }), "", { type: "tab", col });
       let y = 0;
       pile.forEach((c, idx) => {
         const selected = sel?.type === "tab" && sel.col === col && idx >= sel.idx;
-        s.append(cardEl(c, y, selected, () => tap({ type: "tab", col }, c, idx)));
-        y += h * (c.up ? 0.3 : 0.12);
+        s.append(cardEl(c, y, selected, () => tap({ type: "tab", col }, c, idx), { type: "tab", col, idx }));
+        y += h * (c.up ? FACE : 0.12);
       });
-      maxH = Math.max(maxH, y - h * (pile.length && pile[pile.length - 1].up ? 0.3 : 0.12) + h);
+      maxH = Math.max(maxH, y - h * (pile.length && pile[pile.length - 1].up ? FACE : 0.12) + h);
       s.style.height = Math.max(h, maxH) + "px";
     });
     bottom.querySelectorAll(".slot").forEach((s) => (s.style.height = maxH + "px"));

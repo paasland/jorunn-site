@@ -53,7 +53,13 @@ export async function render(el) {
       };
       answers.append(b);
     }
-    box.replaceChildren(info, title, photo, answers, fb);
+    const hint = Object.assign(document.createElement("p"), { className: "muted" });
+    hint.append("Står du fast? Noen av spørsmålene kan du få hint til på ");
+    hint.append(Object.assign(document.createElement("a"), {
+      href: "#/tidslinje", target: "_blank", rel: "noopener", textContent: "Tidslinjen",
+    }));
+    hint.append(" (åpnes i en ny fane, så du ikke mister quizen).");
+    box.replaceChildren(info, title, photo, answers, fb, hint);
   }
   next();
 }

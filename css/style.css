@@ -87,9 +87,14 @@ img.photo.free { aspect-ratio: auto; object-fit: contain; }
 }
 .scard.down { background: repeating-linear-gradient(45deg, #8b3a1e, #8b3a1e 6px, #b5532f 6px, #b5532f 12px); }
 .scard span {
-  position: absolute; top: 0; left: 0; padding: 0 3px; font: bold 12px/1.3 system-ui, sans-serif;
-  background: #ffffffe6; color: #111; border-bottom-right-radius: 6px;
+  position: absolute; top: 0; left: 0; padding: 0 5px; font-family: system-ui, sans-serif; font-weight: bold;
+  font-size: max(17px, calc(var(--ch) * 0.3)); line-height: 1.15;
+  background: #ffffffee; color: #111; border-bottom-right-radius: 8px;
 }
+.scard:not(.down) { touch-action: none; cursor: grab; }
+.scard.dragging { opacity: .35; }
+.drag-ghost { position: fixed; z-index: 100; pointer-events: none; height: var(--ch); }
+.drag-ghost .scard { box-shadow: 0 6px 14px #0006; }
 .scard.red span { color: #c0201a; }
 .scard.sel { outline: 3px solid #f2b600; z-index: 5; }
 
@@ -126,3 +131,16 @@ img.photo.free { aspect-ratio: auto; object-fit: contain; }
 .cell.win { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
 .status { text-align: center; font-size: 1.2rem; min-height: 1.6em; }
 .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+
+/* Lysbildeshow-piler */
+.lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 56px; height: 56px; padding: 0;
+  border-radius: 50%; font-size: 2.2rem; line-height: 1; background: #000a; color: #fff; border: 2px solid #fff9;
+}
+.lb-nav.prev { left: 10px; }
+.lb-nav.next { right: 10px; }
+
+/* 3 på rad: hjelpetekst */
+.help { white-space: pre-line; text-align: left; max-width: 420px; margin: 8px auto; padding: 10px 14px; border-radius: 10px; color: var(--muted); }
+.help.flash { animation: help-flash .45s ease-in-out 4; }
+@keyframes help-flash { 50% { background: #f2b600; color: #111; transform: scale(1.04); } }

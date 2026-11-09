@@ -11,15 +11,15 @@ export async function render(el) {
   const board = Object.assign(document.createElement("div"), { className: "puz" });
   const controls = Object.assign(document.createElement("div"), { className: "row" });
   const dim = document.createElement("select");
-  dim.innerHTML = `<option value="3">3 × 3</option><option value="4">4 × 4</option>`;
+  dim.innerHTML = `<option value="3">3 × 3</option><option value="4">4 × 4</option><option value="5">5 × 5</option><option value="7">7 × 7</option>`;
   const again = Object.assign(document.createElement("button"), { textContent: "Nytt puslespill" });
-  const peek = Object.assign(document.createElement("button"), { textContent: "Vis miniatyr", className: "secondary" });
+  const peek = Object.assign(document.createElement("button"), { textContent: "Vis det fulle bildet", className: "secondary" });
   const prev = Object.assign(document.createElement("div"), { className: "puz-prev", hidden: true });
   const wrap = Object.assign(document.createElement("div"), { className: "puz-wrap" });
   wrap.append(board, prev);
   peek.onclick = () => {
     prev.hidden = !prev.hidden;
-    peek.textContent = prev.hidden ? "Vis miniatyr" : "Skjul miniatyr";
+    peek.textContent = prev.hidden ? "Vis det fulle bildet" : "Skjul det fulle bildet";
   };
   controls.append(dim, peek, again);
   el.append(status, wrap, controls);

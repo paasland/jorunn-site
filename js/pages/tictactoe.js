@@ -69,9 +69,18 @@ export async function render(el) {
   const level = document.createElement("select");
   level.innerHTML = `<option value="easy">Lett</option><option value="hard">Vanskelig</option>`;
   const help = Object.assign(document.createElement("p"), {
-    className: "muted", style: "text-align:center",
-    textContent: "Legg ut tre brikker. Deretter flytter du en av dine egne brikker til et ledig felt.",
+    className: "help",
+    textContent: ["Slik spiller du:",
+      "1. Trykk på ledige felt for å legge ut tre brikker.",
+      "2. Når alle tre er lagt ut, flytter du en brikke: trykk først på en av dine egne brikker, "
+      + "og deretter på et ledig felt. (Du skal ikke dra og slippe.)",
+      "3. Du kan ikke legge ut en fjerde brikke. Flytt en av de du har."].join("\n"),
   });
+  const flash = () => {
+    help.classList.remove("flash");
+    void help.offsetWidth; // start animasjonen på nytt
+    help.classList.add("flash");
+  };
   controls.append(level, again);
   el.append(status, boardEl, controls, help);
 
@@ -126,6 +135,9 @@ export async function render(el) {
       return;
     } else if (!board[i] && selected !== null) {
       move = { from: selected, to: i };
+    } else if (!board[i]) {
+      flash(); // forsøk på å sette en fjerde brikke: få hjelpeteksten til å blinke
+      return;
     }
     if (!move) return;
     board = apply(board, move, "X");
