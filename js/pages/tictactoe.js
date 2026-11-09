@@ -59,7 +59,7 @@ export async function render(el) {
   el.innerHTML = "<h1>3 på rad</h1>";
   const [selfs, opps] = await Promise.all([imagesByTag("face-self"), imagesByTag("face-opp")]);
   if (!selfs.length || !opps.length) {
-    el.append("Mangler bilder: tag minst ett bilde med «face-self» og ett med «face-opp».");
+    el.append("Mangler bilder: trenger ett bilde med «face-self» (Jorunn) og minst ett med «face-opp» (motstandere).");
     return;
   }
   const status = Object.assign(document.createElement("div"), { className: "status" });
@@ -90,7 +90,7 @@ export async function render(el) {
     clearTimeout(timer);
     board = Array(9).fill(null);
     over = false; busy = false; selected = null;
-    const me = selfs[Math.floor(Math.random() * selfs.length)];
+    const me = selfs[0]; // alltid Jorunns eget ansiktsbilde
     const opp = opps[Math.floor(Math.random() * opps.length)];
     faces = { X: await thumbUrl(me.id), O: await thumbUrl(opp.id) };
     prompt();

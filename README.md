@@ -15,7 +15,7 @@ Privat nettside på GitHub Pages. Koden er offentlig, bildene er det ikke: de li
 8. **GitHub**: push, deretter Settings → Pages → Deploy from branch `main` / root.
 
 ## Tagger
-`face-self` (Jorunns ansikt), `face-opp` (motstanderes ansikter), `card` (kabal/billedlotto/puslespill), `world` (verdenshendelser på tidslinjen, vises ikke i album).
+`face-self` (Jorunns ansikt, brukes alltid som spiller i 3 på rad), `face-opp` (motstanderes ansikter, bare filene «… face up.jpg»), `card` (kabal/billedlotto/puslespill), `world` (verdenshendelser på tidslinjen, vises ikke i album).
 
 ## Lokal test
 `npx serve .` i repo-roten.
