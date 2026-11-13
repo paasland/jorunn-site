@@ -100,6 +100,9 @@ async function route() {
   updateAdminBadge();
   const name = location.hash.replace(/^#\/?/, "");
   document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("active", a.hash === `#/${name}`));
+  setMenu(false);
+  const cur = document.querySelector("#nav a.active");
+  document.getElementById("curPage").textContent = cur ? cur.textContent : "";
   if (cleanup) { cleanup(); cleanup = null; }
   const load = routes[name];
   app.replaceChildren(msg(load ? "Laster…" : "Siden kommer snart."));
@@ -108,6 +111,17 @@ async function route() {
   app.replaceChildren();
   cleanup = (await mod.render(app)) || null;
 }
+
+// Mobilmeny: ☰ åpner/lukker listen; trykk utenfor eller Escape lukker den.
+const menuBtn = document.getElementById("menuBtn");
+function setMenu(open) {
+  topbar.classList.toggle("open", open);
+  menuBtn.setAttribute("aria-expanded", String(open));
+  menuBtn.textContent = open ? "✕" : "☰";
+}
+menuBtn.onclick = () => setMenu(!topbar.classList.contains("open"));
+document.addEventListener("click", (e) => { if (!topbar.contains(e.target) || e.target.closest("#nav a")) setMenu(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
 
 document.getElementById("logout").onclick = logout;
 window.addEventListener("hashchange", route);

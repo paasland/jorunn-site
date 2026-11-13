@@ -36,13 +36,20 @@ button:disabled { opacity: .5; }
 #nav { display: flex; gap: 4px; overflow-x: auto; flex: 1; scrollbar-width: none; }
 #nav a { white-space: nowrap; padding: 10px 12px; text-decoration: none; color: var(--ink); border-radius: 8px; }
 #nav a.active { background: var(--accent); color: var(--accent-ink); }
-/* Mobil: menyen får egen rad og brytes over flere linjer, så alle faner er synlige */
+#menuBtn, #curPage { display: none; }
+/* Mobil: tynn topplinje (Jorunn · side · ☰ · Logg ut); menyen åpnes som liste under */
 @media (max-width: 700px) {
-  #topbar { flex-wrap: wrap; row-gap: 4px; }
-  #topbar .brand { flex: 1; }
-  #nav { order: 3; flex: 1 0 100%; flex-wrap: wrap; overflow-x: visible; }
-  #nav a { padding: 8px 12px; border: 1px solid var(--line); }
-  #nav a.active { border-color: var(--accent); }
+  #topbar { gap: 8px; padding: 6px 12px; }
+  #topbar .brand { font-size: 1.05rem; }
+  #curPage { display: block; flex: 1; min-width: 0; color: var(--muted, #777); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #menuBtn { display: block; width: 40px; padding: 4px 0; font-size: 1.3rem; line-height: 1.2; }
+  #nav {
+    display: none; position: absolute; top: 100%; left: 0; right: 0; flex: none;
+    flex-direction: column; gap: 0; padding: 6px 8px; overflow: visible;
+    background: var(--card); border-bottom: 1px solid var(--line); box-shadow: 0 8px 16px #0003;
+  }
+  #topbar.open #nav { display: flex; }
+  #nav a { padding: 14px 12px; border-radius: 8px; font-size: 1.05rem; }
 }
 #logout { background: var(--card); color: var(--ink); border-color: var(--line); padding: 4px 12px; }
 
@@ -84,10 +91,12 @@ img.photo.free.quiz-photo { width: auto; max-width: 100%; max-height: 42vh; max-
 #lightbox[hidden] { display: none; }
 #lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; }
 /* X oppe til høyre; rent visuelt, trykket går til #lightbox som lukker som vanlig */
-#lightbox::after {
-  content: "✕"; position: absolute; top: 12px; right: 12px; width: 44px; height: 44px;
+#lb-x { display: none; }
+#lightbox:not([hidden]) + #lb-x {
+  position: fixed; top: 12px; right: 12px; width: 48px; height: 48px; z-index: 60;
   display: flex; align-items: center; justify-content: center; border-radius: 50%;
-  background: rgba(0,0,0,.6); color: #fff; font-size: 24px; pointer-events: none;
+  background: #000c; color: #fff; font-size: 26px; line-height: 1; font-weight: 700;
+  border: 2px solid #fff; pointer-events: none;
 }
 
 /* Kabal */
@@ -153,6 +162,9 @@ img.photo.free.quiz-photo { width: auto; max-width: 100%; max-height: 42vh; max-
   aspect-ratio: 1; padding: 0; background: var(--card); border: 2px solid var(--line);
   border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;
 }
+.cell.mine { touch-action: none; }
+.cell.dragging img { opacity: .3; }
+.ttt-ghost { position: fixed; z-index: 100; pointer-events: none; border-radius: 8px; box-shadow: 0 6px 14px #0006; object-fit: cover; }
 .cell img { width: 100%; height: 100%; object-fit: cover; }
 .cell.sel { border-color: #f2b600; box-shadow: 0 0 0 3px #f2b600; }
 .cell.win { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }

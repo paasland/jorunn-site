@@ -60,6 +60,19 @@ export async function render(el) {
     }));
     hint.append(" (åpnes i en ny fane, så du ikke mister quizen).");
     box.replaceChildren(info, title, photo, answers, fb, hint);
+    window.scrollTo(0, 0);
+    fit = () => {
+      // Gi bildet resten av skjermhøyden, minus plass til svar, tilbakemelding og «Neste».
+      const top = photo.getBoundingClientRect().top;
+      const below = answers.offsetHeight + 40 + 56 + 32;
+      photo.style.maxHeight = Math.max(100, window.innerHeight - top - below) + "px";
+    };
+    fit();
+    photo.addEventListener("load", fit);
   }
+  let fit = () => {};
+  const onResize = () => fit();
+  window.addEventListener("resize", onResize);
   next();
+  return () => window.removeEventListener("resize", onResize);
 }

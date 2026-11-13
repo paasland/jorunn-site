@@ -44,7 +44,7 @@ function negamax(b, p, depth, alpha, beta) {
 }
 
 // randomChance = sannsynlighet for et tilfeldig (dumt) trekk i stedet for beste trekk.
-const RANDOM_CHANCE = { easy: 0.4, medium: 0.2, hard: 0 };
+const RANDOM_CHANCE = { easy: 0.4, medium: 0.12, hard: 0 };
 
 function computerMove(b, level) {
   const all = movesFor(b, "O");
@@ -76,7 +76,7 @@ export async function render(el) {
     textContent: ["Slik spiller du:",
       "1. Trykk på ledige felt for å legge ut tre brikker.",
       "2. Når alle tre er lagt ut, flytter du en brikke: trykk først på en av dine egne brikker, "
-      + "og deretter på et ledig felt. (Du skal ikke dra og slippe.)",
+      + "og deretter på et ledig felt. Du kan også dra brikken til et ledig felt.",
       "3. Du kan ikke legge ut en fjerde brikke. Flytt en av de du har."].join("\n"),
   });
   const flash = () => {
@@ -112,7 +112,45 @@ export async function render(el) {
       if (win?.line.includes(i)) c.classList.add("win");
       if (i === selected) c.classList.add("sel");
       if (v) c.append(Object.assign(document.createElement("img"), { src: faces[v], alt: v }));
-      c.onclick = () => tap(i);
+      let dragged = false;
+      c.onclick = () => { if (!dragged) tap(i); };
+      if (v === "X" && !win && !over && !busy && count(board, "X") >= PIECES) {
+        c.classList.add("mine");
+        c.onpointerdown = (e) => {
+          if (e.button > 0) return;
+          const sx = e.clientX, sy = e.clientY;
+          let ghost = null;
+          c.setPointerCapture(e.pointerId);
+          const mv = (ev) => {
+            if (!ghost) {
+              if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+              dragged = true;
+              const r = c.getBoundingClientRect();
+              ghost = Object.assign(document.createElement("img"), { src: faces.X, className: "ttt-ghost" });
+              ghost.style.width = r.width + "px"; ghost.style.height = r.height + "px";
+              document.body.append(ghost);
+              c.classList.add("dragging");
+            }
+            ghost.style.left = ev.clientX - ghost.offsetWidth / 2 + "px";
+            ghost.style.top = ev.clientY - ghost.offsetHeight / 2 + "px";
+          };
+          const up = (ev) => {
+            c.removeEventListener("pointermove", mv);
+            c.removeEventListener("pointerup", up);
+            c.removeEventListener("pointercancel", up);
+            if (!ghost) return;
+            ghost.remove();
+            c.classList.remove("dragging");
+            setTimeout(() => { dragged = false; }, 80);
+            const t = ev.type === "pointerup" ? document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".cell") : null;
+            const to = t ? [...boardEl.children].indexOf(t) : -1;
+            if (to >= 0 && to !== i && !board[to]) { selected = i; tap(to); }
+          };
+          c.addEventListener("pointermove", mv);
+          c.addEventListener("pointerup", up);
+          c.addEventListener("pointercancel", up);
+        };
+      }
       return c;
     }));
   }
