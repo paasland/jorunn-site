@@ -51,13 +51,45 @@ export async function render(el) {
         b.style.backgroundImage = `url("${url}")`;
         b.style.backgroundSize = `${n * 100}% ${n * 100}%`;
         b.style.backgroundPosition = `${((v % n) / (n - 1)) * 100}% ${((Math.floor(v / n)) / (n - 1)) * 100}%`;
-        b.onclick = () => {
+        const move = () => {
           if (done || !nb(empty).includes(pos)) return;
           [tiles[empty], tiles[pos]] = [tiles[pos], tiles[empty]];
           empty = pos; moves++;
           if (tiles.every((x, i) => x === i)) { done = true; status.textContent = `Ferdig på ${moves} trekk! 🎉`; confetti(); }
           else status.textContent = `Trekk: ${moves}`;
           draw();
+        };
+        let dragged = false;
+        b.onclick = () => { if (!dragged) move(); };
+        // Dra brikken til det tomme feltet (bare brikker ved siden av kan flyttes).
+        b.onpointerdown = (e) => {
+          if (done || e.button > 0 || !nb(empty).includes(pos)) return;
+          const sx = e.clientX, sy = e.clientY;
+          b.setPointerCapture(e.pointerId);
+          dragged = false;
+          const mv = (ev) => {
+            const dx = ev.clientX - sx, dy = ev.clientY - sy;
+            if (!dragged && Math.hypot(dx, dy) < 6) return;
+            dragged = true;
+            b.style.position = "relative"; b.style.zIndex = 5; b.style.transition = "none";
+            b.style.transform = `translate(${dx}px, ${dy}px)`;
+          };
+          const up = (ev) => {
+            b.removeEventListener("pointermove", mv);
+            b.removeEventListener("pointerup", up);
+            b.removeEventListener("pointercancel", up);
+            if (!dragged) return;
+            const r = board.children[empty].getBoundingClientRect();
+            const px = r.width / 2, py = r.height / 2;
+            const hit = ev.type === "pointerup" && ev.clientX > r.left - px && ev.clientX < r.right + px
+              && ev.clientY > r.top - py && ev.clientY < r.bottom + py;
+            setTimeout(() => { dragged = false; }, 50);
+            if (hit) move();
+            else { b.style.transform = ""; b.style.position = ""; b.style.zIndex = ""; }
+          };
+          b.addEventListener("pointermove", mv);
+          b.addEventListener("pointerup", up);
+          b.addEventListener("pointercancel", up);
         };
         return b;
       }));

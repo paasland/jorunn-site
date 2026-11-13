@@ -43,9 +43,12 @@ function negamax(b, p, depth, alpha, beta) {
   return best;
 }
 
-function computerMove(b, easy) {
+// randomChance = sannsynlighet for et tilfeldig (dumt) trekk i stedet for beste trekk.
+const RANDOM_CHANCE = { easy: 0.4, medium: 0.2, hard: 0 };
+
+function computerMove(b, level) {
   const all = movesFor(b, "O");
-  if (easy && Math.random() < 0.4) return all[Math.floor(Math.random() * all.length)];
+  if (Math.random() < RANDOM_CHANCE[level]) return all[Math.floor(Math.random() * all.length)];
   let best = -Infinity, bestMoves = [];
   for (const m of all) {
     const v = -negamax(apply(b, m, "O"), "X", 5, -Infinity, Infinity);
@@ -67,7 +70,7 @@ export async function render(el) {
   const controls = Object.assign(document.createElement("div"), { className: "row" });
   const again = Object.assign(document.createElement("button"), { textContent: "Nytt spill" });
   const level = document.createElement("select");
-  level.innerHTML = `<option value="easy">Lett</option><option value="hard">Vanskelig</option>`;
+  level.innerHTML = `<option value="easy">Lett</option><option value="medium">Middels</option><option value="hard">Vanskelig</option>`;
   const help = Object.assign(document.createElement("p"), {
     className: "help",
     textContent: ["Slik spiller du:",
@@ -147,7 +150,7 @@ export async function render(el) {
     busy = true;
     status.textContent = "Datamaskinen tenker…";
     timer = setTimeout(() => {
-      board = apply(board, computerMove(board, level.value === "easy"), "O");
+      board = apply(board, computerMove(board, level.value), "O");
       busy = false;
       draw();
       if (!finish()) { prompt(); }

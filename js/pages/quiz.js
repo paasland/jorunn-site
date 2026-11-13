@@ -33,7 +33,7 @@ export async function render(el) {
     const imgId = useWorld ? q.worldImage : q.jorunnImage;
     const opts = shuffle([q.year, ...shuffle(years.filter((y) => y !== q.year)).slice(0, 3)]);
     const photo = photoEl(imgId, { zoom: false });
-    photo.classList.add("free");
+    photo.classList.add("free", "quiz-photo");
     const info = Object.assign(document.createElement("p"), { className: "muted", textContent: `Spørsmål ${i + 1} av ${questions.length}` });
     const title = Object.assign(document.createElement("h2"), { textContent: "Hvilket år var dette?" });
     const answers = Object.assign(document.createElement("div"), { className: "row" });

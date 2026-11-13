@@ -55,16 +55,30 @@ export async function render(el) {
     : s.type === "found" ? [found[s.f][found[s.f].length - 1]]
     : tab[s.col].slice(s.idx);
 
-  // free = dra-og-slipp: kort kan legges på hvilken som helst kolonne (også mot vanlige regler),
-  // så lenge kolonnen er tom eller øverste kort vender opp. Grunnbunkene følger fortsatt reglene.
-  const canDrop = (pile) => !pile.length || pile[pile.length - 1].up;
+  const NOPE = [
+    "Hallo! Det der er ikke lov! 🙅‍♀️",
+    "Nei nei nei, kabalpolitiet sier stopp! 🚓",
+    "Kortene rister på hodet: «Ikke oss!» 🙈",
+    "Det er juks, Jorunn! 😜",
+    "Oi sann! Reglene sier nei. 📜",
+    "Hmm, den passer ikke der. Prøv igjen! 🤔",
+    "Kortet nekter å flytte dit! 😤",
+  ];
+  let nopeTimer;
+  function reject() {
+    let t = boardEl.querySelector(".nope");
+    if (!t) { t = Object.assign(document.createElement("div"), { className: "nope" }); boardEl.append(t); }
+    t.textContent = NOPE[Math.floor(Math.random() * NOPE.length)];
+    clearTimeout(nopeTimer);
+    nopeTimer = setTimeout(() => t.remove(), 1800);
+  }
 
-  function tryMove(target, free = false) {
+  function tryMove(target) {
     const cards = cardsOf(sel);
     if (!cards[0]) return false;
     if (target.type === "found") { if (cards.length !== 1 || !canFound(cards[0], target.f)) return false; }
     else if (sel.type === "tab" && sel.col === target.col) return false;
-    else if (!(free ? canDrop(tab[target.col]) : canTab(cards[0], tab[target.col]))) return false;
+    else if (!canTab(cards[0], tab[target.col])) return false;
     snapshot();
     if (sel.type === "waste") waste.pop();
     else if (sel.type === "found") found[sel.f].pop();
@@ -98,6 +112,10 @@ export async function render(el) {
         return draw();
       }
       if ((target.type === "tab" || target.type === "found") && tryMove(target)) return draw();
+      const isTop = target.type === "found" || !card || idx === tab[target.col].length - 1;
+      if (isTop && (target.type === "found" || !card || card.up)) {
+        sel = null; draw(); return reject();
+      }
     }
     sel = null;
     if (card && target.type !== "stock") {
@@ -158,8 +176,10 @@ export async function render(el) {
       const t = ev.type === "pointerup"
         ? document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".slot")?._target : null;
       sel = source;
-      if (!(t && (t.type === "tab" || t.type === "found") && tryMove(t, true))) sel = null;
+      const ok = t && (t.type === "tab" || t.type === "found") && tryMove(t);
+      if (!ok) sel = null;
       draw();
+      if (!ok && t && (t.type === "tab" || t.type === "found") && !(t.type === "tab" && source.type === "tab" && t.col === source.col)) reject();
     };
     d.addEventListener("pointermove", move);
     d.addEventListener("pointerup", end);
